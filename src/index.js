@@ -9,6 +9,7 @@ const io = socketio(server);
 
 const port = process.env.PORT || 3000;
 const publicDirectoryPath = path.join(__dirname, "../public");
+const Filter = require("bad-words");
 
 app.use(express.static(publicDirectoryPath));
 
@@ -24,20 +25,26 @@ io.on("connection", (socket) => {
   //   });
   socket.broadcast.emit("message", "A new user joined!");
   socket.emit("message", welcomeMsg);
-  socket.on("sendMsg", (msg) => {
+  socket.on("sendMsg", (msg, callback) => {
+    const filter = new Filter();
+    if (filter.isProfane(msg)) {
+      return callback("profanity is not allowed ");
+    }
     io.emit("showMsg", msg);
+    callback();
   });
 
   socket.on("disconnect", () => {
     io.emit("message", "A user left!");
   });
 
-  socket.on("sendLocation", (position) => {
+  socket.on("locationMessage", (position, callback) => {
     console.log(position);
     io.emit(
-      "message",
-      `Location : ${position.latitude + " " + position.longitude}`
+      "locationMessage",
+      `https://google.com/maps?q=${position.latitude},${position.longitude}`
     );
+    callback();
   });
 });
 
